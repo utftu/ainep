@@ -23,7 +23,7 @@ npm pack --dry-run
 npm pack
 ```
 
-`prepack` запускает проверку типов, тесты и сборку. В npm-архив включаются только `dist/main.js`, package.json, README и файл лицензии, если он добавлен. Исходники, тесты, отчёты, `.env`, сертификаты и декларации внутренних модулей не публикуются. Зависимости desy/h11 устанавливаются npm отдельно и не встроены в сборку.
+`prepack` запускает проверку типов, тесты и сборку. В npm-архив включаются только `dist/ainep.js`, package.json, README и файл лицензии, если он добавлен. Исходники, тесты, отчёты, `.env`, сертификаты и декларации внутренних модулей не публикуются. Зависимости desy/h11 устанавливаются npm отдельно и не встроены в сборку.
 
 ## Сервер
 
@@ -45,7 +45,7 @@ GATEWAY_TOKEN="заменить-случайным-ключом"
 bun start
 ```
 
-По умолчанию listener `http://127.0.0.1:8443`. Для внешнего listener задать `GATEWAY_HOST`, `GATEWAY_PORT`, `TLS_CERT_FILE`, `TLS_KEY_FILE`. Без TLS внешний listener запрещён; проверку TLS upstream отключать нельзя. Сборка: `bun run build`, запуск: `bun dist/main.js`.
+По умолчанию listener `http://127.0.0.1:8443`. Для внешнего listener задать `GATEWAY_HOST`, `GATEWAY_PORT`, `TLS_CERT_FILE`, `TLS_KEY_FILE`. Без TLS внешний listener запрещён; проверку TLS upstream отключать нельзя. Сборка: `bun run build`, запуск: `bun dist/ainep.js`.
 
 ## Клиент и авторизация
 

@@ -45,4 +45,4 @@ Audit запускается с искусственными API/OAuth credentia
 
 Схемы используют desy 0.0.29. Не применять optional()/allowEmpty() напрямую к обязательным полям: они разрешают null/undefined. Общие схемы не мутировать при добавлении optionality. createObject исключает массивы и использует shape без прототипа для строгой проверки ключей.
 
-Npm-пакет 0.1.0: bin → dist/main.js, files → только dist/main.js (README/package.json/license добавляет npm). JS-сборка external для зависимостей desy/h11. Публиковать отчёты аудита, пользовательские данные и секреты нельзя. Лицензия MIT выбрана пользователем; текст в LICENSE. Публикация в registry пока не выполнена.
+Npm-пакет 0.1.0: bin → dist/ainep.js, files → только dist/ainep.js (README/package.json/license добавляет npm). JS-сборка external для зависимостей desy/h11. Публиковать отчёты аудита, пользовательские данные и секреты нельзя. Лицензия MIT выбрана пользователем; текст в LICENSE. Публикация в registry пока не выполнена.

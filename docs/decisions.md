@@ -41,7 +41,7 @@
 ## Npm-пакет — согласован 2026-11-02
 
 - Подготовка npm-дистрибутива ainep@0.1.0: исполняемая команда ainep, справка и версия, запуск без аргументов. Требуется Bun >=1.3.0; Node.js runtime не поддерживается.
-- В bin указан dist/main.js с shebang /usr/bin/env bun. files разрешает только dist/main.js; npm добавляет package.json/README/license. Пакет — CLI, публичный программный API и декларации внутренних модулей не публикуются.
+- В bin указан dist/ainep.js с shebang /usr/bin/env bun. files разрешает только dist/ainep.js; npm добавляет package.json/README/license. Пакет — CLI, публичный программный API и декларации внутренних модулей не публикуются.
 - Зависимости h11/desy остаются external, устанавливаются пакетным менеджером. prepack выполняет check/test/build, версия CLI берётся из package.json при сборке.
 - Имя сейчас не занято по registry; публикация ещё не выполнялась. Авторизация npm требует восстановления (whoami вернул 401).
 - Пользователь выбрал MIT; package.json и LICENSE содержат соответствующую лицензию.
