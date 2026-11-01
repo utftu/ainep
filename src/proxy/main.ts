@@ -8,7 +8,7 @@ import { startProxy } from "./proxy.ts";
 function main(): void {
   const args = Bun.argv.slice(2);
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-    console.log(`Usage: ai-guy [--help | --version]
+    console.log(`Usage: aigan [--help | --version]
 
 Start the gateway using environment variables:
   GATEWAY_TOKEN   Required gateway access token (at least 32 characters)
@@ -25,7 +25,7 @@ Requires Bun >=1.3.0. OAuth refresh and CONNECT tunneling are not included.`);
     return;
   }
   if (args.length !== 0) {
-    console.error("Unsupported arguments. Run ai-guy --help.");
+    console.error("Unsupported arguments. Run aigan --help.");
     process.exitCode = 1;
     return;
   }

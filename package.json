@@ -1,5 +1,5 @@
 {
-  "name": "ai-guy",
+  "name": "aigan",
   "type": "module",
   "scripts": {
     "start": "bun src/proxy/main.ts",
@@ -23,7 +23,7 @@
   "description": "Strict request gateway for Claude Code, running on Bun",
   "license": "MIT",
   "bin": {
-    "ai-guy": "dist/main.js"
+    "aigan": "dist/main.js"
   },
   "files": [
     "dist/main.js"
