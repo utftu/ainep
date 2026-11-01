@@ -1,4 +1,4 @@
-# aigan
+# ainep
 
 Локальный проект Aleksey: серверный шлюз и планируемые клиентские средства проверки приватности Claude Code. Не обещает предотвращение блокировок аккаунта.
 
@@ -10,7 +10,7 @@
 - `bun install --frozen-lockfile` — зависимости.
 - `bun start` — сервер из исходников.
 - `npm pack --dry-run` / `npm pack` — проверка состава / создание npm-архива; prepack запускает check, test и build.
-- CLI пакета: `aigan`, `--help`, `--version`; требует Bun в PATH.
+- CLI пакета: `ainep`, `--help`, `--version`; требует Bun в PATH.
 - `bun test` — локальные HTTP/SSE тесты с искусственными credentials.
 - `bun run check` — проверка типов.
 - `bun run build` — JS-сборка и декларации типов.

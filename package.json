@@ -1,5 +1,5 @@
 {
-  "name": "aigan",
+  "name": "ainep",
   "type": "module",
   "scripts": {
     "start": "bun src/proxy/main.ts",
@@ -23,7 +23,7 @@
   "description": "Strict request gateway for Claude Code, running on Bun",
   "license": "MIT",
   "bin": {
-    "aigan": "dist/main.js"
+    "ainep": "dist/main.js"
   },
   "files": [
     "dist/main.js"

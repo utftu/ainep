@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "claude-anon",
+      "name": "ainep",
       "dependencies": {
         "desy": "0.0.29",
         "h11": "1.0.21",
