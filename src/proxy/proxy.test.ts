@@ -16,13 +16,13 @@ function startMock(handler: (req: Request) => Response | Promise<Response>): Ser
 }
 
 function startGateway(upstream: Server<any>, options: Partial<ProxyOptions> = {}): Server<any> {
-  const server = startProxy({ gatewayToken, upstreamOrigin: upstream.url.origin, port: 0, ...options });
+  const server = startProxy({ gatewayToken, upstreamOrigins: { claude: upstream.url.origin }, port: 0, ...options });
   servers.push(server);
   return server;
 }
 
 async function send(gateway: Server<any>, options: { path?: string; body?: string; headers?: Record<string, string>; signal?: AbortSignal } = {}): Promise<Response> {
-  return await fetch(new URL(options.path ?? "/v1/messages", gateway.url), {
+  return await fetch(new URL(options.path ?? "/claude/v1/messages", gateway.url), {
     method: "POST",
     headers: { "content-type": "application/json", "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}`, ...options.headers },
     body: options.body ?? '{"model":"test","messages":[],"max_tokens":1}',
@@ -46,7 +46,7 @@ describe("proxy boundaries", () => {
     const gateway = startGateway(upstream);
     const body = '{ "messages": [], "model": "test" }';
     const response = await send(gateway, {
-      path: "/v1/messages/count_tokens?beta=true", body,
+      path: "/claude/v1/messages/count_tokens?beta=true", body,
       headers: { "cookie": "private=value", "x-stainless-os": "Linux", "x-forwarded-for": "1.2.3.4", "anthropic-beta": "test-beta" },
     });
     expect(response.status).toBe(200);
@@ -65,7 +65,7 @@ describe("proxy boundaries", () => {
   test("rejects missing, wrong and ambiguous credentials without upstream calls", async () => {
     let calls = 0;
     const gateway = startGateway(startMock(() => { calls++; return new Response("unexpected"); }));
-    expect((await fetch(new URL("/v1/messages", gateway.url))).status).toBe(401);
+    expect((await fetch(new URL("/claude/v1/messages", gateway.url))).status).toBe(401);
     expect((await send(gateway, { headers: { "x-gateway-token": "wrong" } })).status).toBe(401);
     expect((await send(gateway, { headers: { authorization: `Bearer ${gatewayToken}` } })).status).toBe(401);
     expect(calls).toBe(0);
@@ -117,7 +117,7 @@ describe("proxy boundaries", () => {
 
   test("rejects gateway Bearer without separate gateway authentication", async () => {
     const gateway = startGateway(startMock(() => Response.json({ ok: true })));
-    const response = await fetch(new URL("/v1/messages", gateway.url), {
+    const response = await fetch(new URL("/claude/v1/messages", gateway.url), {
       method: "POST", headers: { authorization: `Bearer ${gatewayToken}`, "content-type": "application/json" }, body: "{}",
     });
     expect(response.status).toBe(401);
@@ -127,12 +127,12 @@ describe("proxy boundaries", () => {
   test("rejects unknown routes, methods and query parameters", async () => {
     let calls = 0;
     const gateway = startGateway(startMock(() => { calls++; return new Response(); }));
-    for (const path of ["/api/event_logging/v2/batch", "/_health", "//example.invalid/v1/messages", "/v1/messages/"]) {
+    for (const path of ["/v1/messages", "/v1/messages/count_tokens", "/openai/v1/messages", "/claude", "/claude/api/event_logging/v2/batch", "/claude/claude/v1/messages", "/claude/v1/messages/extra", "/api/event_logging/v2/batch", "/_health", "//example.invalid/claude/v1/messages", "/claude/v1/messages/"]) {
       const response = await fetch(`${gateway.url.origin}${path}`, { method: "POST", headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}` } });
       expect(response.status).toBe(404);
     }
-    expect((await fetch(new URL("/v1/messages", gateway.url), { headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}` } })).status).toBe(404);
-    for (const path of ["/v1/messages?target=https://example.invalid", "/v1/messages?beta=false", "/v1/messages?beta=true&beta=true"]) {
+    expect((await fetch(new URL("/claude/v1/messages", gateway.url), { headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}` } })).status).toBe(404);
+    for (const path of ["/claude/v1/messages?target=https://example.invalid", "/claude/v1/messages?beta=false", "/claude/v1/messages?beta=true&beta=true"]) {
       expect((await send(gateway, { path })).status).toBe(400);
     }
     expect(calls).toBe(0);
@@ -155,7 +155,7 @@ describe("proxy boundaries", () => {
       received.push({ body: await req.json(), encoding: req.headers.get("content-encoding") });
       return Response.json({ ok: true });
     }));
-    for (const path of ["/v1/messages", "/v1/messages/count_tokens"]) {
+    for (const path of ["/claude/v1/messages", "/claude/v1/messages/count_tokens"]) {
       const response = await fetch(new URL(path, gateway.url), {
         method: "POST",
         headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}`, "content-type": "application/json", "content-encoding": "gzip" },
@@ -174,7 +174,7 @@ describe("proxy boundaries", () => {
     let calls = 0;
     const logs: unknown[] = [];
     const gateway = startGateway(startMock(() => { calls++; return new Response(); }), { maxBodyBytes: 1024, log: (event) => logs.push(event) });
-    const response = await fetch(new URL("/v1/messages", gateway.url), {
+    const response = await fetch(new URL("/claude/v1/messages", gateway.url), {
       method: "POST",
       headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}`, "content-type": "application/json", "content-encoding": "gzip" },
       body: gzipSync(Buffer.from(JSON.stringify({ metadata: { user_id: "secret".repeat(10000) } }))),
@@ -189,7 +189,7 @@ describe("proxy boundaries", () => {
     let calls = 0;
     const gateway = startGateway(startMock(() => { calls++; return new Response(); }), { maxBodyBytes: 64 });
     expect((await send(gateway, { body: JSON.stringify({ value: "x".repeat(100) }) })).status).toBe(413);
-    const response = await fetch(new URL("/v1/messages", gateway.url), {
+    const response = await fetch(new URL("/claude/v1/messages", gateway.url), {
       method: "POST", headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
       body: new ReadableStream({ start(controller): void { controller.enqueue(new TextEncoder().encode("x".repeat(100))); controller.close(); } }),
     });
@@ -214,7 +214,7 @@ describe("proxy boundaries", () => {
     const gateway = startGateway(startMock(() => { upstreamCalls++; return Response.json({ ok: true }); }));
     const status = await new Promise<number>((resolve, reject) => {
       const req = request({
-        hostname: "127.0.0.1", port: gateway.port, method: "POST", path: `${trap.url.origin}/v1/messages`,
+        hostname: "127.0.0.1", port: gateway.port, method: "POST", path: `${trap.url.origin}/claude/v1/messages`,
         headers: { "x-gateway-token": gatewayToken, authorization: `Bearer ${accessToken}`, "content-type": "application/json" },
       }, (res) => { res.resume(); res.on("end", () => resolve(res.statusCode ?? 0)); });
       req.on("error", reject);
@@ -228,22 +228,23 @@ describe("proxy boundaries", () => {
   test("returns upstream errors without logging body, credentials or query", async () => {
     const logs: unknown[] = [];
     const gateway = startGateway(startMock(() => Response.json({ error: "synthetic upstream error" }, { status: 429, headers: { "retry-after": "3" } })), { log: (event) => logs.push(event) });
-    const response = await send(gateway, { path: "/v1/messages?beta=true" });
+    const response = await send(gateway, { path: "/claude/v1/messages?beta=true" });
     expect(response.status).toBe(429);
     expect(response.headers.get("retry-after")).toBe("3");
     expect(await response.json()).toEqual({ error: "synthetic upstream error" });
-    expect(logs).toEqual([{ route: "messages", status: 429, durationMs: expect.any(Number) }]);
+    expect(logs).toEqual([{ provider: "claude", route: "messages", status: 429, durationMs: expect.any(Number) }]);
   });
 
   test("refuses unsafe listener and upstream configuration", () => {
     for (const options of [
       { hostname: "0.0.0.0" },
-      { upstreamOrigin: "http://example.invalid" },
-      { upstreamOrigin: "https://user:password@example.invalid" },
-      { upstreamOrigin: "https://example.invalid/path" },
-      { upstreamOrigin: "https://example.invalid?query=value" },
+      { upstreamOrigins: { claude: "http://example.invalid" } },
+      { upstreamOrigins: { claude: "https://user:password@example.invalid" } },
+      { upstreamOrigins: { claude: "https://example.invalid/path" } },
+      { upstreamOrigins: { claude: "https://example.invalid?query=value" } },
       { gatewayToken: "short" },
-    ]) {
+      { upstreamOrigins: { unknown: "https://example.invalid" } },
+    ] as Partial<ProxyOptions>[]) {
       expect(() => startProxy({ gatewayToken, port: 0, ...options })).toThrow();
     }
   });

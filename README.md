@@ -1,10 +1,10 @@
 # ainep
 
-Шлюз для нативного Claude Code: передаёт клиентский OAuth Bearer к фиксированному upstream и проверяет запросы по закрытой схеме. Credentials остаются под управлением клиента; шлюз видит access token в памяти при обработке запроса, но не хранит его и не обновляет. Это не средство гарантированной анонимности или предотвращения блокировок.
+Шлюз запросов к AI-провайдерам с отдельными маршрутами и закрытыми схемами. Первый реализованный провайдер — Claude на `/claude`: передаёт клиентский OAuth Bearer к фиксированному upstream. Credentials остаются под управлением клиента; шлюз видит access token в памяти при обработке запроса, но не хранит его и не обновляет. Это не средство гарантированной анонимности или предотвращения блокировок.
 
 ## Установка npm-пакета
 
-Подготовлена версия 0.1.0; она ещё не опубликована в registry. Требуется установленный Bun >=1.3.0 в PATH: Node.js сам по себе недостаточен.
+Подготовлена версия 0.2.0; она ещё не опубликована в registry. Требуется установленный Bun >=1.3.0 в PATH: Node.js сам по себе недостаточен.
 
 После публикации:
 
@@ -52,7 +52,7 @@ bun start
 Схема для проверенного custom API origin:
 
 ```text
-ANTHROPIC_BASE_URL=https://<домен-шлюза>
+ANTHROPIC_BASE_URL=https://<домен-шлюза>/claude
 ANTHROPIC_CUSTOM_HEADERS=x-gateway-token: <отдельный-ключ-шлюза>
 ```
 
@@ -64,9 +64,9 @@ ANTHROPIC_CUSTOM_HEADERS=x-gateway-token: <отдельный-ключ-шлюз�
 
 ## HTTP и поддерживаемая схема
 
-Только POST `/v1/messages` и `/v1/messages/count_tokens`, необязательный одиночный `?beta=true`. Content-Type — application/json. Поддерживаемая версия `anthropic-version: 2023-06-01` (используется и по умолчанию). Остальные версии отклоняются. Origin всегда `https://api.anthropic.com`; пользователь не может выбирать адрес назначения. Редиректы не выполняются и возвращаются как 502 без Location.
+Только POST `/claude/v1/messages` и `/claude/v1/messages/count_tokens`, необязательный одиночный `?beta=true`. Content-Type — application/json. Поддерживаемая версия `anthropic-version: 2023-06-01` (используется и по умолчанию). Остальные версии отклоняются. Префикс `/claude` снимается перед отправкой: upstream получает `/v1/messages` или `/v1/messages/count_tokens`. Старые маршруты `/v1/...` без префикса и неизвестные провайдеры возвращают 404. Origin провайдера Claude всегда `https://api.anthropic.com`; пользователь не может выбирать адрес назначения. Редиректы не выполняются и возвращаются как 502 без Location.
 
-Поддерживаемое подмножество описано desy 0.0.29 в `src/privacy/schema.ts`:
+Поддерживаемое подмножество описано desy 0.0.29 в `src/providers/claude/schema.ts`:
 
 - Оба маршрута: model, messages; optional system, tools, tool_choice, thinking, context_management.
 - Messages дополнительно требует max_tokens; допускает metadata.user_id, stream, temperature, top_p, top_k, stop_sequences, service_tier, cache_control, output_config.
@@ -82,7 +82,7 @@ metadata сохраняется: прежнее удаление отменен�
 
 Входящие cookies, forwarding-заголовки и заголовки SDK не копируются. Из ответа передаются content-type, request-id, retry-after, anthropic-ratelimit-*; cookies и Content-Length/Content-Encoding не копируются. Ошибки upstream, включая 401/429, получает клиент. Повторов и OAuth refresh на сервере нет.
 
-Deadline 10 минут, включая SSE; idleTimeout 60 секунд. При отключении клиента upstream отменяется. После начала SSE ошибку передают обрывом потока, поэтому клиент должен проверять завершающее событие. Журнал содержит только route/status/durationMs до начала ответа; тела и credentials в журнал не попадают.
+Deadline 10 минут, включая SSE; idleTimeout 60 секунд. При отключении клиента upstream отменяется. После начала SSE ошибку передают обрывом потока, поэтому клиент должен проверять завершающее событие. Журнал содержит только provider/route/status/durationMs до начала ответа; тела и credentials в журнал не попадают.
 
 ## Проверка
 
@@ -90,15 +90,25 @@ Deadline 10 минут, включая SSE; idleTimeout 60 секунд. При 
 bun test
 bun run check
 bun run build
-bun run audit /absolute/path/to/claude docs/oauth-audit.json
+bun run audit /absolute/path/to/claude docs/provider-audit.json
 ```
 
-31 автоматический тест: авторизация и смена клиентского токена, закрытые схемы, отсутствие upstream-вызовов при отказе, сжатие, лимиты, точность тела, защита адреса назначения, SSE и отмена.
+34 автоматических теста: авторизация и смена клиентского токена, закрытые схемы, отсутствие upstream-вызовов при отказе, сжатие, лимиты, точность тела, защита адреса назначения, SSE и отмена.
 
-Восемь сценариев настоящего клиента на локальном mock описаны в [docs/oauth-audit.md](docs/oauth-audit.md). Стенд использует отдельные временные config/tmp/cwd, фиктивные credentials и sandbox с единственным разрешённым localhost-портом. Настоящие credentials, настройки пользователя и диалоги недоступны. Preflight проверяет изоляцию до запуска Claude; временные файлы удаляются. Реальный вход/refresh и весь сетевой трафик обычного клиента этим не проверены.
+Восемь сценариев настоящего клиента повторно прошли с префиксом `/claude`: [docs/provider-audit.json](docs/provider-audit.json). Методика и ограничения описаны в [docs/oauth-audit.md](docs/oauth-audit.md). Стенд использует отдельные временные config/tmp/cwd, фиктивные credentials и sandbox с единственным разрешённым localhost-портом. Настоящие credentials, настройки пользователя и диалоги недоступны. Preflight проверяет изоляцию до запуска Claude; временные файлы удаляются. Реальный вход/refresh и весь сетевой трафик обычного клиента этим не проверены.
 
 Прокси сам по себе не блокирует прямую сеть клиента. Развёртывание на VPS и правила macOS ещё не выполнены. Аудиты [docs/audit.md](docs/audit.md) и [docs/client-audit.md](docs/client-audit.md) описывают предыдущую реализацию; актуальные решения — [docs/decisions.md](docs/decisions.md).
 
 ## Лицензия
 
 MIT — см. [LICENSE](LICENSE).
+
+Если запуск сообщает об отсутствии GATEWAY_TOKEN, задайте отдельный ключ шлюза через окружение или .env в рабочей папке. CLI сообщает ошибки конфигурации без вывода значений ключей и путей к приватным файлам.
+
+## Модули провайдеров
+
+Общий транспорт в src/proxy отвечает за ключ шлюза, TLS, лимиты, timeout и потоки. Общая обработка тела в src/privacy распаковывает JSON и вызывает переданную провайдером проверку.
+
+src/providers/provider.ts определяет контракт: id, фиксированный origin, точные входящие и upstream-маршруты, проверка запроса/тела, исходящие заголовки и заголовки ответа. src/providers/claude содержит реализацию Claude и его desy-схемы. Другие провайдеры пока не реализованы.
+
+Переход на 0.2.0 требует добавить `/claude` к ANTHROPIC_BASE_URL. Клиентский ключ x-gateway-token и OAuth Bearer остаются прежними.

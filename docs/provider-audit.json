@@ -1,0 +1,1154 @@
+{
+  "version": "2.1.281 (Claude Code)",
+  "binarySha256": "a922981f6f3b55a251ef9f9dbaa0621a5f99cbcb5ca67f8a797476ccfc83f626",
+  "isolation": {
+    "allowedMockPort": true,
+    "blockedOtherPort": true,
+    "blockedExternalFixture": true,
+    "keychainMachServicesDenied": true
+  },
+  "authMode": "synthetic-api-key-and-oauth",
+  "scenarios": [
+    {
+      "name": "stored-oauth-custom-origin",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": true
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-gateway-token",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 15189,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        }
+      ]
+    },
+    {
+      "name": "oauth-custom-origin",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": true
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-gateway-token",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 15189,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        }
+      ]
+    },
+    {
+      "name": "bare-message",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-api-key",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 972,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        }
+      ]
+    },
+    {
+      "name": "bare-read-tool",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-api-key",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 1816,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-api-key",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 2096,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        }
+      ]
+    },
+    {
+      "name": "bare-resume",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-api-key",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 1348,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        }
+      ]
+    },
+    {
+      "name": "isolated-standard",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-api-key",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 15156,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        }
+      ]
+    },
+    {
+      "name": "proxied-read-tool",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": true
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-gateway-token",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 17798,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "upstream",
+          "route": "/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 17798,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": true
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-gateway-token",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 18168,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "upstream",
+          "route": "/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 18168,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        }
+      ]
+    },
+    {
+      "name": "proxied-resume",
+      "exitCode": 0,
+      "success": true,
+      "stderrBytes": 0,
+      "requests": [
+        {
+          "auth": {
+            "bearerMatchesFixture": false,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "client",
+          "route": "/claude/api/hello",
+          "queryKeys": [],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "connection",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 0,
+          "fields": [],
+          "metadata": {
+            "type": "undefined"
+          },
+          "stream": false,
+          "toolResult": false,
+          "fixtureRead": false
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": true
+          },
+          "stage": "client",
+          "route": "/claude/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-dangerous-direct-browser-access",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent",
+            "x-app",
+            "x-claude-code-session-id",
+            "x-gateway-token",
+            "x-stainless-arch",
+            "x-stainless-lang",
+            "x-stainless-os",
+            "x-stainless-package-version",
+            "x-stainless-retry-count",
+            "x-stainless-runtime",
+            "x-stainless-runtime-version",
+            "x-stainless-timeout"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 15880,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        },
+        {
+          "auth": {
+            "bearerMatchesFixture": true,
+            "gatewayMatchesFixture": false
+          },
+          "stage": "upstream",
+          "route": "/v1/messages",
+          "queryKeys": [
+            "beta"
+          ],
+          "headers": [
+            "accept",
+            "accept-encoding",
+            "anthropic-beta",
+            "anthropic-version",
+            "authorization",
+            "connection",
+            "content-length",
+            "content-type",
+            "host",
+            "user-agent"
+          ],
+          "encoding": "identity",
+          "bodyBytes": 15880,
+          "fields": [
+            "model",
+            "messages",
+            "system",
+            "tools",
+            "metadata",
+            "max_tokens",
+            "thinking",
+            "context_management",
+            "stream"
+          ],
+          "metadata": {
+            "user_id": {
+              "type": "json-string",
+              "fields": {
+                "device_id": {
+                  "type": "string",
+                  "length": 64
+                },
+                "account_uuid": {
+                  "type": "string",
+                  "length": 0
+                },
+                "session_id": {
+                  "type": "string",
+                  "length": 36
+                }
+              }
+            }
+          },
+          "stream": true,
+          "toolResult": true,
+          "fixtureRead": true
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic OAuth only; no real account or Anthropic server compatibility test",
+    "Stored OAuth uses a temporary credentials file; real Keychain is inaccessible",
+    "OAuth refresh and browser login were not executed",
+    "No capture of blocked destination attempts",
+    "OAuth scenarios use safe-mode and disabled telemetry",
+    "Metadata schema only; identifiers and prompts are not saved"
+  ]
+}

@@ -1,14 +1,12 @@
 import { brotliDecompress, gunzip, inflate } from "node:zlib";
 
-import { checkRequestSchema } from "./schema.ts";
-
 export type PrivacyResult =
   | { body: Buffer<ArrayBuffer> }
   | { status: 400 | 413 | 415; message: string };
 
 export type PrivacyInput = {
   body: Buffer<ArrayBuffer>;
-  route: "messages" | "count_tokens";
+  checkBody: (value: unknown) => boolean;
   encoding: string | undefined;
   maxBodyBytes: number;
 };
@@ -54,7 +52,7 @@ export async function sanitizeBody(input: PrivacyInput): Promise<PrivacyResult> 
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(decoded.body);
     const payload: unknown = JSON.parse(text);
-    if (!checkRequestSchema(payload, input.route)) {
+    if (!input.checkBody(payload)) {
       return { status: 400, message: "Unsupported request schema" };
     }
     // Validate without reserializing: preserve identifiers, signatures and exact numeric payloads.

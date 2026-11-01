@@ -205,7 +205,7 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
       return createMockResponse({ stream: payload.stream === true, tool, fixture, model: payload.model });
     },
   });
-  const proxy = startProxy({ gatewayToken: "audit-gateway-fake-0000000000000000000000", port: 0, upstreamOrigin: upstream.url.origin });
+  const proxy = startProxy({ gatewayToken: "audit-gateway-fake-0000000000000000000000", port: 0, upstreamOrigins: { claude: upstream.url.origin } });
   const server = Bun.serve({
     hostname: "127.0.0.1", port: 0, maxRequestBodySize: 16 * 1024 * 1024,
     async fetch(req): Promise<Response> {
@@ -223,10 +223,10 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
         });
         return new Response(response.body, { status: response.status, headers: response.headers });
       }
-      if (url.pathname === "/v1/messages/count_tokens") {
+      if (url.pathname === "/claude/v1/messages/count_tokens") {
         return Response.json({ input_tokens: 10 });
       }
-      if (url.pathname !== "/v1/messages") {
+      if (url.pathname !== "/claude/v1/messages") {
         return Response.json({ error: { type: "not_found_error", message: "Mock route unavailable" } }, { status: 404 });
       }
       const tool = active.tool && !issuedTool;
@@ -239,7 +239,7 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
   const env = {
     PATH: "/usr/bin:/bin:/usr/sbin:/sbin", TMPDIR: root, CLAUDE_CODE_TMPDIR: root, CLAUDE_CONFIG_DIR: join(root, "config"),
     ANTHROPIC_API_KEY: fakeKey,
-    ANTHROPIC_BASE_URL: server.url.origin, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+    ANTHROPIC_BASE_URL: `${server.url.origin}/claude`, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
     DISABLE_AUTOUPDATER: "1", DISABLE_ERROR_REPORTING: "1", CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL: "1",
     CLAUDE_CODE_MAX_RETRIES: "0", API_TIMEOUT_MS: "10000", TERM: "dumb", LANG: "en_US.UTF-8",
   };
@@ -315,7 +315,7 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
       const forwardingVerified = !scenario.throughProxy || (upstreamRequests.length > 0 && upstreamRequests.every((capture) => capture.fields.includes("metadata") && capture.auth.bearerMatchesFixture && !capture.headers.includes("x-gateway-token") && !capture.headers.includes("x-claude-code-session-id") && !capture.headers.includes("x-api-key")));
       results.push({
         name: scenario.name, exitCode: result.code,
-        success: result.code === 0 && parsed?.result === "AUDIT_OK" && parsed?.is_error === false && toolVerified && resumeVerified && forwardingVerified && (!scenario.oauth || requests.some((capture) => capture.route === "/v1/messages" && capture.auth.bearerMatchesFixture && capture.auth.gatewayMatchesFixture)),
+        success: result.code === 0 && parsed?.result === "AUDIT_OK" && parsed?.is_error === false && toolVerified && resumeVerified && forwardingVerified && (!scenario.oauth || requests.some((capture) => capture.route === "/claude/v1/messages" && capture.auth.bearerMatchesFixture && capture.auth.gatewayMatchesFixture)),
         stderrBytes: Buffer.byteLength(result.stderr), requests,
       });
     }

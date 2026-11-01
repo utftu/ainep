@@ -2,21 +2,27 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { Server, TLSOptions } from "bun";
 import { createServer, H11, type WsData } from "h11";
 
+import { claudeProvider } from "../providers/claude/claude.ts";
+import type { Provider, ProviderRoute } from "../providers/provider.ts";
+
 import { sanitizeBody } from "../privacy/privacy.ts";
+
+export class ProxyConfigurationError extends Error {}
 
 export type ProxyOptions = {
   gatewayToken: string;
   hostname?: string;
   port?: number;
   tls?: TLSOptions;
-  upstreamOrigin?: string;
+  upstreamOrigins?: Record<string, string>;
   maxBodyBytes?: number;
   requestTimeoutMs?: number;
   log?: (event: ProxyEvent) => void;
 };
 
 export type ProxyEvent = {
-  route: "messages" | "count_tokens" | "rejected";
+  provider: string;
+  route: string;
   status: number;
   durationMs: number;
 };
@@ -45,61 +51,13 @@ function createError(status: number, message: string): Response {
   });
 }
 
-function getRoute(pathname: string): ProxyEvent["route"] {
-  if (pathname === "/v1/messages") {
-    return "messages";
-  }
-  if (pathname === "/v1/messages/count_tokens") {
-    return "count_tokens";
-  }
-  return "rejected";
-}
-
 function authenticate(req: Request, expectedHash: Buffer): boolean {
   const token = req.headers.get("x-gateway-token");
-  const authorization = req.headers.get("authorization");
-  if (token === null || req.headers.has("x-api-key") || !authorization?.startsWith("Bearer ")) {
-    return false;
-  }
-  const accessToken = authorization.slice(7);
-  if (!checkToken(accessToken) || accessToken.includes(",") || accessToken === token) {
+  if (token === null) {
     return false;
   }
   const actualHash = createHash("sha256").update(token).digest();
   return timingSafeEqual(actualHash, expectedHash);
-}
-
-function buildHeaders(req: Request): Headers {
-  // Forward client OAuth only to the fixed upstream; the separate gateway secret stays here.
-  const headers = new Headers({
-    "content-type": "application/json",
-    "accept": "application/json, text/event-stream",
-    "accept-encoding": "identity",
-    "anthropic-version": req.headers.get("anthropic-version") ?? "2023-06-01",
-    "authorization": req.headers.get("authorization")!,
-  });
-  const beta = req.headers.get("anthropic-beta");
-  if (beta !== null) {
-    headers.set("anthropic-beta", beta);
-  }
-  return headers;
-}
-
-function buildResponseHeaders(response: Response): Headers {
-  const headers = new Headers({ "cache-control": "no-store" });
-  for (const name of ["content-type", "request-id", "retry-after"]) {
-    const value = response.headers.get(name);
-    if (value !== null) {
-      headers.set(name, value);
-    }
-  }
-  // fetch may decode the response, so upstream length/encoding must not be copied.
-  for (const [name, value] of response.headers) {
-    if (name.startsWith("anthropic-ratelimit-")) {
-      headers.set(name, value);
-    }
-  }
-  return headers;
 }
 
 async function readBody(req: Request, maxBodyBytes: number): Promise<Buffer<ArrayBuffer> | Response> {
@@ -158,18 +116,15 @@ function streamResponse(body: ReadableStream<Uint8Array>, cancellation: AbortCon
 
 async function forwardRequest(req: Request, options: {
   upstreamOrigin: string;
+  provider: Provider;
+  route: ProviderRoute;
   requestTimeoutMs: number;
   maxBodyBytes: number;
 }): Promise<Response> {
   const incoming = new URL(req.url);
-  for (const [name, value] of incoming.searchParams) {
-    if (name !== "beta" || value !== "true" || incoming.searchParams.getAll(name).length !== 1) {
-      return createError(400, "Unsupported query parameters");
-    }
-  }
-  const version = req.headers.get("anthropic-version");
-  if (version !== null && version !== "2023-06-01") {
-    return createError(400, "Unsupported API version");
+  const invalid = options.provider.validateRequest(req);
+  if (invalid !== undefined) {
+    return createError(invalid.status, invalid.message);
   }
   if (req.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json") {
     return createError(415, "Expected application/json");
@@ -181,7 +136,7 @@ async function forwardRequest(req: Request, options: {
   }
   const sanitized = await sanitizeBody({
     body,
-    route: incoming.pathname === "/v1/messages/count_tokens" ? "count_tokens" : "messages",
+    checkBody: options.route.checkBody,
     encoding: req.headers.get("content-encoding") ?? undefined,
     maxBodyBytes: options.maxBodyBytes,
   });
@@ -191,14 +146,14 @@ async function forwardRequest(req: Request, options: {
 
   // Only a validated route and the single supported query flag reach a fixed origin.
   const upstream = new URL(options.upstreamOrigin);
-  upstream.pathname = incoming.pathname;
+  upstream.pathname = options.route.upstreamPath;
   upstream.search = incoming.search;
   const deadline = AbortSignal.timeout(options.requestTimeoutMs);
   const cancellation = new AbortController();
   const signal = AbortSignal.any([req.signal, deadline, cancellation.signal]);
   const response = await fetch(upstream, {
     method: "POST",
-    headers: buildHeaders(req),
+    headers: options.provider.buildHeaders(req),
     body: sanitized.body,
     redirect: "manual",
     signal,
@@ -217,56 +172,66 @@ async function forwardRequest(req: Request, options: {
 
   return new Response(response.body === null ? null : streamResponse(response.body, cancellation), {
     status: response.status,
-    headers: buildResponseHeaders(response),
+    headers: options.provider.buildResponseHeaders(response),
   });
 }
 
 export function startProxy(options: ProxyOptions): Server<WsData> {
   const hostname = options.hostname ?? "127.0.0.1";
   const port = options.port ?? 8443;
-  const upstream = new URL(options.upstreamOrigin ?? "https://api.anthropic.com");
+  const providers = [claudeProvider];
   const maxBodyBytes = options.maxBodyBytes ?? 16 * 1024 * 1024;
   const requestTimeoutMs = options.requestTimeoutMs ?? 10 * 60 * 1000;
 
   if (!checkToken(options.gatewayToken)) {
-    throw new Error("Set a gateway token of at least 32 printable characters");
+    throw new ProxyConfigurationError("GATEWAY_TOKEN must contain at least 32 printable ASCII characters without spaces");
   }
   if (Bun.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
-    throw new Error("TLS certificate verification must stay enabled");
+    throw new ProxyConfigurationError("TLS certificate verification must stay enabled");
   }
   if (!checkLoopback(hostname) && (!options.tls?.cert || !options.tls?.key)) {
-    throw new Error("Non-loopback listeners require a TLS certificate and key");
-  }
-  if (upstream.username || upstream.password || upstream.pathname !== "/" || upstream.search || upstream.hash) {
-    throw new Error("Upstream must be an origin without credentials, path, query or fragment");
-  }
-  if (upstream.protocol !== "https:" && !(upstream.protocol === "http:" && checkLoopback(upstream.hostname))) {
-    throw new Error("Upstream must use HTTPS; HTTP is allowed only for a local test server");
+    throw new ProxyConfigurationError("Non-loopback listeners require a TLS certificate and key");
   }
   if (!Number.isInteger(port) || port < 0 || port > 65535 || !Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1 || !Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs < 1) {
-    throw new Error("Invalid port, body limit or request timeout");
+    throw new ProxyConfigurationError("Invalid port, body limit or request timeout");
   }
 
   const gatewayHash = createHash("sha256").update(options.gatewayToken).digest();
   const h11 = new H11();
+  const routes = new Map<string, { provider: Provider; route: ProviderRoute }>();
+  for (const id in options.upstreamOrigins) {
+    if (!providers.some((provider) => provider.id === id)) {
+      throw new ProxyConfigurationError("Unknown upstream provider override");
+    }
+  }
   h11.use(({ req }) => {
     if (!authenticate(req, gatewayHash)) {
       return createError(401, "Unauthorized");
     }
-    if (req.method !== "POST" || getRoute(new URL(req.url).pathname) === "rejected") {
+    if (req.method !== "POST" || !routes.has(new URL(req.url).pathname)) {
       return createError(404, "Route not supported");
     }
   });
-  h11.post("/v1/messages", ({ req }) => forwardRequest(req, {
-    upstreamOrigin: upstream.origin, requestTimeoutMs, maxBodyBytes,
-  }));
-  h11.post("/v1/messages/count_tokens", ({ req }) => forwardRequest(req, {
-    upstreamOrigin: upstream.origin, requestTimeoutMs, maxBodyBytes,
-  }));
+  for (const provider of providers) {
+    const upstream = new URL(options.upstreamOrigins?.[provider.id] ?? provider.origin);
+    if (upstream.username || upstream.password || upstream.pathname !== "/" || upstream.search || upstream.hash) {
+      throw new ProxyConfigurationError("Upstream must be an origin without credentials, path, query or fragment");
+    }
+    if (upstream.protocol !== "https:" && !(upstream.protocol === "http:" && checkLoopback(upstream.hostname))) {
+      throw new ProxyConfigurationError("Upstream must use HTTPS; HTTP is allowed only for a local test server");
+    }
+    for (const route of provider.routes) {
+      routes.set(route.path, { provider, route });
+      h11.post(route.path, ({ req }) => forwardRequest(req, {
+        upstreamOrigin: upstream.origin, provider, route, requestTimeoutMs, maxBodyBytes,
+      }));
+    }
+  }
   h11.onNotFound = () => createError(404, "Route not supported");
   h11.onError = () => createError(500, "Request could not be processed");
   h11.ee.on("response", ({ req, res, ms }) => {
-    options.log?.({ route: getRoute(new URL(req.url).pathname), status: res.status, durationMs: Math.round(ms) });
+    const match = routes.get(new URL(req.url).pathname);
+    options.log?.({ provider: match?.provider.id ?? "rejected", route: match?.route.name ?? "rejected", status: res.status, durationMs: Math.round(ms) });
   });
 
   return Bun.serve({

@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 
-import { sanitizeBody } from "./privacy.ts";
+import { checkRequestSchema } from "../providers/claude/schema.ts";
+import { sanitizeBody as sanitizeJsonBody, type PrivacyInput, type PrivacyResult } from "./privacy.ts";
+
+async function sanitizeBody(input: Omit<PrivacyInput, "checkBody"> & { route: "messages" | "count_tokens" }): Promise<PrivacyResult> {
+  return await sanitizeJsonBody({ ...input, checkBody: (value) => checkRequestSchema(value, input.route) });
+}
 
 const codecs = [
   { encoding: "identity", compress: (body: Buffer<ArrayBuffer>): Buffer<ArrayBuffer> => body },
