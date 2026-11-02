@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { Socket } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 
+import { startConnectProxy } from "../connect/connect.ts";
 import { startProxy } from "../proxy/proxy.ts";
 
 type Capture = {
@@ -29,6 +31,7 @@ type Scenario = {
   throughProxy?: boolean;
   oauth?: boolean;
   storedOauth?: boolean;
+  refresh?: boolean;
 };
 
 type ScenarioResult = {
@@ -38,6 +41,7 @@ type ScenarioResult = {
   success: boolean;
   stderrBytes?: number;
   requests?: Capture[];
+  connectDestinations?: string[];
 };
 
 export type AuditReport = {
@@ -53,12 +57,12 @@ function quoteProfile(value: string): string {
   return JSON.stringify(value);
 }
 
-function createProfile(options: { root: string; binary: string; port: number }): string {
-  // Only this task's mock port is reachable. The profile is inherited by child tools.
+function createProfile(options: { root: string; binary: string; port: number; connectPort: number }): string {
+  // Only the mock API and authenticated fixture proxy ports are reachable.
   return `(version 1)
 (allow default)
 (deny network*)
-(allow network-outbound (remote ip "localhost:${options.port}"))
+(allow network-outbound (remote ip "localhost:${options.port}") (remote ip "localhost:${options.connectPort}"))
 (deny file-read*
   (subpath "/Users") (subpath ${quoteProfile(homedir())}) (subpath "/Volumes")
   (subpath "/Library/Keychains") (subpath "/Library/Application Support/ClaudeCode")
@@ -235,7 +239,17 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
     },
     error(): Response { return new Response("Invalid mock request", { status: 400 }); },
   });
-  const profile = createProfile({ root, binary, port: server.port! });
+  const connectDestinations: string[] = [];
+  const tunnel = await startConnectProxy({
+    gatewayToken: "audit-gateway-fake-0000000000000000000000", port: 0,
+    openConnection(hostname, port): Socket {
+      connectDestinations.push(`${hostname}:${port}`);
+      const socket = new Socket();
+      queueMicrotask(() => socket.destroy());
+      return socket;
+    },
+  });
+  const profile = createProfile({ root, binary, port: server.port!, connectPort: Number(new URL(tunnel.url).port) });
   const env = {
     PATH: "/usr/bin:/bin:/usr/sbin:/sbin", TMPDIR: root, CLAUDE_CODE_TMPDIR: root, CLAUDE_CONFIG_DIR: join(root, "config"),
     ANTHROPIC_API_KEY: fakeKey,
@@ -259,6 +273,7 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
     }
     const version = await runChild({ profile, root, env, args: [binary, "--version"] });
     const scenarios: Scenario[] = [
+      { name: "oauth-refresh-connect-outage", bare: false, tool: false, oauth: true, storedOauth: true, refresh: true },
       { name: "stored-oauth-custom-origin", bare: false, tool: false, oauth: true, storedOauth: true },
       { name: "oauth-custom-origin", bare: false, tool: false, oauth: true },
       { name: "bare-message", bare: true, tool: false },
@@ -294,13 +309,20 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
           await writeFile(join(root, "config", ".credentials.json"), JSON.stringify({ claudeAiOauth: {
             accessToken: "sk-ant-oat01-audit-fake-0000000000000000000000000000",
             refreshToken: "sk-ant-ort01-audit-fake-0000000000000000000000000000",
-            expiresAt: Date.now() + 3600000,
+            expiresAt: Date.now() + (scenario.refresh ? -3600000 : 3600000),
             scopes: ["user:inference", "user:profile"], subscriptionType: "max",
           } }), { mode: 0o600 });
         } else {
           scenarioEnv.CLAUDE_CODE_OAUTH_TOKEN = "sk-ant-oat01-audit-fake-0000000000000000000000000000";
         }
         scenarioEnv.ANTHROPIC_CUSTOM_HEADERS = "x-gateway-token: audit-gateway-fake-0000000000000000000000";
+      }
+      if (scenario.refresh) {
+        const proxyUrl = new URL(tunnel.url);
+        proxyUrl.username = "ainep";
+        proxyUrl.password = "audit-gateway-fake-0000000000000000000000";
+        scenarioEnv.HTTPS_PROXY = proxyUrl.href;
+        scenarioEnv.NO_PROXY = "127.0.0.1,localhost";
       }
       const result = await runChild({ profile, root, env: scenarioEnv, args });
       await rm(join(root, "config", ".credentials.json"), { force: true });
@@ -315,8 +337,9 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
       const forwardingVerified = !scenario.throughProxy || (upstreamRequests.length > 0 && upstreamRequests.every((capture) => capture.fields.includes("metadata") && capture.auth.bearerMatchesFixture && !capture.headers.includes("x-gateway-token") && !capture.headers.includes("x-claude-code-session-id") && !capture.headers.includes("x-api-key")));
       results.push({
         name: scenario.name, exitCode: result.code,
-        success: result.code === 0 && parsed?.result === "AUDIT_OK" && parsed?.is_error === false && toolVerified && resumeVerified && forwardingVerified && (!scenario.oauth || requests.some((capture) => capture.route === "/claude/v1/messages" && capture.auth.bearerMatchesFixture && capture.auth.gatewayMatchesFixture)),
+        success: scenario.refresh ? connectDestinations.includes("platform.claude.com:443") : result.code === 0 && parsed?.result === "AUDIT_OK" && parsed?.is_error === false && toolVerified && resumeVerified && forwardingVerified && (!scenario.oauth || requests.some((capture) => capture.route === "/claude/v1/messages" && capture.auth.bearerMatchesFixture && capture.auth.gatewayMatchesFixture)),
         stderrBytes: Buffer.byteLength(result.stderr), requests,
+        connectDestinations: scenario.refresh ? [...connectDestinations] : undefined,
       });
     }
     return {
@@ -324,9 +347,10 @@ export async function runAudit(binaryPath: string): Promise<AuditReport> {
       binarySha256: createHash("sha256").update(await readFile(binary)).digest("hex"),
       isolation: { allowedMockPort: true, blockedOtherPort: true, blockedExternalFixture: true, keychainMachServicesDenied: true },
       authMode: "synthetic-api-key-and-oauth", scenarios: results,
-      limitations: ["Synthetic OAuth only; no real account or Anthropic server compatibility test", "Stored OAuth uses a temporary credentials file; real Keychain is inaccessible", "OAuth refresh and browser login were not executed", "No capture of blocked destination attempts", "OAuth scenarios use safe-mode and disabled telemetry", "Metadata schema only; identifiers and prompts are not saved"],
+      limitations: ["Synthetic OAuth only; no real account or Anthropic server compatibility test", "Stored OAuth uses a temporary credentials file; real Keychain is inaccessible", "Refresh CONNECT routing tested with intentional 502; successful refresh and browser login not tested", "No capture of blocked destination attempts", "OAuth scenarios use safe-mode and disabled telemetry", "Metadata schema only; identifiers and prompts are not saved"],
     };
   } finally {
+    await tunnel.close();
     await server.stop(true);
     await proxy.stop(true);
     await upstream.stop(true);

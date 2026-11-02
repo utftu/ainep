@@ -19,7 +19,8 @@
 ## Структура
 
 - `src/proxy/proxy.ts` — HTTP-модуль, экспорт startProxy и его типы.
-- `src/proxy/main.ts` — запуск с переменными окружения.
+- `src/proxy/main.ts` — запуск API или `ainep connect` с переменными окружения.
+- `src/connect/connect.ts` — отдельный авторизованный HTTP(S) CONNECT listener; фиксированный список хостов авторизации.
 - `src/proxy/proxy.test.ts` — интеграционные проверки с локальным upstream.
 - `src/privacy/privacy.ts` — ограниченная распаковка, проверка UTF-8/JSON и сохранение исходных байтов.
 - `src/providers/provider.ts` — общий контракт провайдера.
@@ -47,6 +48,8 @@ Audit запускается с искусственными API/OAuth credentia
 
 Схемы используют desy 0.0.29. Не применять optional()/allowEmpty() напрямую к обязательным полям: они разрешают null/undefined. Общие схемы не мутировать при добавлении optionality. createObject исключает массивы и использует shape без прототипа для строгой проверки ключей.
 
-Npm-пакет 0.2.0: bin → dist/ainep.js, files → только dist/ainep.js (README/package.json/license добавляет npm). JS-сборка external для зависимостей desy/h11. Публиковать отчёты аудита, пользовательские данные и секреты нельзя. Лицензия MIT выбрана пользователем; текст в LICENSE. Публикация в registry пока не выполнена.
+Npm-пакет 0.3.0: bin → dist/ainep.js, files → только dist/ainep.js (README/package.json/license добавляет npm). JS-сборка external для зависимостей desy/h11. Публиковать отчёты аудита, пользовательские данные и секреты нельзя. Лицензия MIT выбрана пользователем; текст в LICENSE. Публикация в registry пока не выполнена.
 
 Маршруты Claude только /claude/v1/messages и /claude/v1/messages/count_tokens. Старые /v1/... отклоняются. Для локальных тестов startProxy принимает upstreamOrigins: { claude: origin }; клиент назначение менять не может. Журнал содержит provider/route/status/durationMs.
+
+CONNECT: команда ainep connect, default 127.0.0.1:8444; для внешнего listener TLS обязателен. Proxy Basic login ainep, пароль GATEWAY_TOKEN. Разрешены только platform.claude.com:443, claude.ai:443, claude.com:443; api.anthropic.com запрещён. Не логировать Proxy-Authorization. openConnection — программная подстановка для локальных тестов. Сборка и тесты выполняются без создания tgz, если пользователь не попросил релиз/архив. Проверка docs/connect-audit.json наблюдает CONNECT попытки refresh, а не успешную ротацию токена.
