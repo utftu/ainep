@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { version } from "../../package.json";
 
 import { ConnectConfigurationError, startConnectProxy } from "../connect/connect.ts";
+import { RunConfigurationError, runClaude } from "../run/run.ts";
 
 import { ProxyConfigurationError, startProxy } from "./proxy.ts";
 
@@ -18,7 +19,7 @@ function readTlsFile(path: string, variable: string): Buffer {
 async function main(): Promise<void> {
   const args = Bun.argv.slice(2);
   if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-    console.log(`Usage: ainep [connect | --help | --version]
+    console.log(`Usage: ainep [connect | run claude [args...] | --help | --version]
 
 Start the gateway. Available provider: /claude
 
@@ -32,11 +33,22 @@ Environment variables:
   TLS_KEY_FILE   TLS private key path (required for non-loopback listeners)
 
 Run ainep connect as a separate process for authenticated OAuth CONNECT tunnels.
-Proxy username: ainep; password: GATEWAY_TOKEN. Requires Bun >=1.3.0.`);
+Proxy username: ainep; password: GATEWAY_TOKEN. Requires Bun >=1.3.0.
+
+Client launcher: ainep run claude [args...]
+  GATEWAY_URL       Required API gateway origin, without /claude
+  CONNECT_PROXY_URL Required CONNECT proxy origin, without credentials
+  GATEWAY_TOKEN     Required shared gateway token
+HTTPS required except on loopback. Settings apply only to the child process.
+Claude must be installed in PATH. Arguments and terminal are passed through.`);
     return;
   }
   if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
     console.log(version);
+    return;
+  }
+  if (args[0] === "run" && args[1] === "claude") {
+    process.exitCode = await runClaude(args.slice(2), Bun.env);
     return;
   }
   if (args.length !== 0 && !(args.length === 1 && args[0] === "connect")) {
@@ -79,7 +91,9 @@ try {
   await main();
 } catch (error) {
   // Startup failures must not dump environment values or secret file contents.
-  if (error instanceof ProxyConfigurationError || error instanceof ConnectConfigurationError) {
+  if (error instanceof RunConfigurationError) {
+    console.error(`Client startup failed: ${error.message}`);
+  } else if (error instanceof ProxyConfigurationError || error instanceof ConnectConfigurationError) {
     console.error(`Proxy startup failed: ${error.message}`);
   } else if ((error as NodeJS.ErrnoException)?.code === "EADDRINUSE") {
     console.error("Proxy startup failed: GATEWAY_PORT is already in use. Choose another port.");

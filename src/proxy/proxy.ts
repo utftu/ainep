@@ -235,6 +235,7 @@ export function startProxy(options: ProxyOptions): Server<WsData> {
   });
 
   return Bun.serve({
+    development: false,
     hostname, port, tls: options.tls,
     maxRequestBodySize: maxBodyBytes,
     idleTimeout: 60,

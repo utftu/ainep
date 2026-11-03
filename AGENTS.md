@@ -21,6 +21,7 @@
 - `src/proxy/proxy.ts` — HTTP-модуль, экспорт startProxy и его типы.
 - `src/proxy/main.ts` — запуск API или `ainep connect` с переменными окружения.
 - `src/connect/connect.ts` — отдельный авторизованный HTTP(S) CONNECT listener; фиксированный список хостов авторизации.
+- `src/run/run.ts` — launcher `ainep run claude [args...]`; настройки API/CONNECT только в окружении дочернего процесса, наследование терминала и передача сигналов.
 - `src/proxy/proxy.test.ts` — интеграционные проверки с локальным upstream.
 - `src/privacy/privacy.ts` — ограниченная распаковка, проверка UTF-8/JSON и сохранение исходных байтов.
 - `src/providers/provider.ts` — общий контракт провайдера.
@@ -53,3 +54,5 @@ Npm-пакет 0.3.0: bin → dist/ainep.js, files → только dist/ainep.j
 Маршруты Claude только /claude/v1/messages и /claude/v1/messages/count_tokens. Старые /v1/... отклоняются. Для локальных тестов startProxy принимает upstreamOrigins: { claude: origin }; клиент назначение менять не может. Журнал содержит provider/route/status/durationMs.
 
 CONNECT: команда ainep connect, default 127.0.0.1:8444; для внешнего listener TLS обязателен. Proxy Basic login ainep, пароль GATEWAY_TOKEN. Разрешены только platform.claude.com:443, claude.ai:443, claude.com:443; api.anthropic.com запрещён. Не логировать Proxy-Authorization. openConnection — программная подстановка для локальных тестов. Сборка и тесты выполняются без создания tgz, если пользователь не попросил релиз/архив. Проверка docs/connect-audit.json наблюдает CONNECT попытки refresh, а не успешную ротацию токена.
+
+Launcher: обязательны GATEWAY_URL и CONNECT_PROXY_URL (origin без пути и credentials, HTTPS вне loopback), GATEWAY_TOKEN. Сам добавляет /claude и proxy credentials. Заменяет обе формы proxy env/NO_PROXY и ANTHROPIC_CUSTOM_HEADERS только у дочернего процесса. Остальное окружение и OAuth клиента наследуются. Без shell/alias/hijack, изменения Keychain и firewall. Тесты используют искусственный claude во временном PATH; не запускать реальный аккаунт для тестов.
